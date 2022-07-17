@@ -1,5 +1,5 @@
 {
-  "name": "@sapronovs/transformer-templator",
+  "name": "@sapronovs/parcel-transformer-templator",
   "version": "0.0.1",
   "license": "MIT",
   "publishConfig": {
@@ -9,8 +9,8 @@
     "type": "git",
     "url": "git+https://github.com/Bezumstvo/transformer-templator.git"
   },
-  "main": "lib/transformer-templator.js",
-  "source": "src/transformer-templator.js",
+  "main": "lib/index.js",
+  "source": "src/index.js",
   "engines": {
     "node": ">= 12.0.0",
     "node-fetch": "3.2.8",
