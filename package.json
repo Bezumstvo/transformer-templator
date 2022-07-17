@@ -1,0 +1,38 @@
+{
+  "name": "@parcel/transformer-templator",
+  "version": "0.0.1",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1parcel-bundler/parcel.git"
+  },
+  "main": "lib/transformer-templator.js",
+  "source": "src/transformer-templator.js",
+  "engines": {
+    "node": ">= 12.0.0",
+    "node-fetch": "3.2.8",
+    "parcel": "^2.6.2"
+  },
+  "dependencies": {
+    "@parcel/plugin": "2.6.2"
+  },
+  "bugs": {
+    "url": "https://github.com/1parcel-bundler/parcel/issues"
+  },
+  "homepage": "https://github.com/1parcel-bundler/parcel#readme",
+  "description": "HTML template for parcel",
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "template"
+  ],
+  "author": "Sapronov Sergey"
+}
