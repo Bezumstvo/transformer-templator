@@ -1,5 +1,5 @@
 {
-  "name": "@parcel/transformer-templator",
+  "name": "@sapronovs/transformer-templator",
   "version": "0.0.1",
   "license": "MIT",
   "publishConfig": {
@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/1parcel-bundler/parcel.git"
+    "url": "git+https://github.com/Bezumstvo/transformer-templator.git"
   },
   "main": "lib/transformer-templator.js",
   "source": "src/transformer-templator.js",
@@ -20,9 +20,9 @@
     "@parcel/plugin": "2.6.2"
   },
   "bugs": {
-    "url": "https://github.com/1parcel-bundler/parcel/issues"
+    "url": "https://github.com/Bezumstvo/transformer-templator.git"
   },
-  "homepage": "https://github.com/1parcel-bundler/parcel#readme",
+  "homepage": "https://github.com/Bezumstvo/transformer-templator.git#readme",
   "description": "HTML template for parcel",
   "directories": {
     "lib": "lib"
