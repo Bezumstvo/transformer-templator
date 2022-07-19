@@ -1,59 +1,72 @@
 const { Transformer } = require('@parcel/plugin');
+const { readFileSync, existsSync } = require('fs');
 
 module.exports = new Transformer({
 
-  async transform({ asset, resolve}) {
-    const source = await asset.getCode();    
-    let data = new Map();
-    data.set("cats", "12 котов"); 
-    data.set("dogs", "12 псов"); 
-    
-    const tmpl = new TemplateJSSX(data, source);
+  async transform({ asset }) {
+    const source = await asset.getCode();        
+    const tmpl = new TemplateJSSX(source);
     asset.type = 'html';
-    asset.importer = [{}, resolvePathImporter({resolve})];
     asset.setCode(tmpl.compile()); // string result
 
-
-    resolvePathImporter({resolve});
-
-
-    for (let el in asset) {
-      console.log(await el);
-    }
     return [asset];
   },
 });
 
 class TemplateJSSX {
-  constructor(data = new Map(), html = '') {
+  constructor( html = '') {
     this.html = html;
-    this.data = data;
+    this.data = new Map();
   }
 
   compile() {
-    this.checkVariables();
-    this.checkLoops();
-    this.insertBlock();
+    this.html = this.getVariables(this.html);
+    this.html = this.insertBlock();
+    this.html = this.checkLoops(this.html);
+    this.html = this.checkVariables(this.data, this.html);
 
     return this.html;
-
   }
+
   
-    /* check variable */
-  checkVariables () {
-    if (this.data) {
-      this.data.forEach((value, key) => {
-        this.html = this.html.replaceAll('{' + key + '}', value);
+  getVariables (html) {
+    const regexVars = /{var}(.*?){\/var}/gims;
+    let matches;
+    while ((matches = regexVars.exec(html)) !== null) {
+      const varsArr = matches[1].replace(/[\r\n]*/gims,'').split(";");
+      varsArr.forEach(variable => 
+        {
+          if (variable.length > 1) {
+            let [key, value] = variable.split("=");
+            value = value.replace(/^[\"\'\s]+/, "").replace(/[\"\'\s]+$/, "");
+            this.data.set(key.trim(), value);
+          }
+        })
+      html = html.replace(matches[0],'');
+    }
+
+    return html;
+  }
+
+
+  checkVariables (mapObj, html) {
+    const data = new Map(Object.entries(mapObj))
+    if (data) {
+      data.forEach((value, key) => {
+        html = html.replaceAll('{' + key + '}', value);
       });
     }
+
+    return html;
   }
-    
-  checkLoops () {
+  
+  
+  checkLoops (html) {
     const regexArr = /{for(.*?)}(.*?){\/for}/gims;
     const condArr = ["==","<=",">=",">","<"]; 
 
     let matches;
-    while ((matches = regexArr.exec(this.html)) !== null) {
+    while ((matches = regexArr.exec(html)) !== null) {
       const operatorArr = matches[1].replaceAll(" ","").split(";");
       const element = matches[2].trim();
       const variableArr = operatorArr[0].split('='); // variableArr[0] <- name variableArr[1] <- value
@@ -78,56 +91,48 @@ class TemplateJSSX {
       }
       return result;`
       const copy = new Function('params', funcStr);        
-      this.html = this.html.replace(matches[0],copy(element));
-      
+      html = html.replace(matches[0],copy(element));  
     }
-    return this.html;
+
+    return html;
   }
+
 
   insertBlock() {
     const regexBlocks = /\[\[(.*?)\]\]/gi;
     
-    let matches;
-    while ((matches = regexBlocks.exec(this.html)) !== null) {    
-      if (matches) {      
-        let ssstr = '<include src="/src/components/button/button.jssx"></include>';
-        this.html = this.html.replaceAll('[[Button]]', ssstr);
-        console.log(this.html, matches[0], ssstr);
+    let matches, path, moduleName, vars, varsJSON, moduleHTML;
+    while ((matches = regexBlocks.exec(this.html)) !== null) {
+      path = "./src/components/";
+      if (matches) {
+        [moduleName, varsJSON] = matches[1].split("@");
+        if (varsJSON) {
+          vars = JSON.parse(varsJSON);
+        }
+        if (moduleName.indexOf('/') >= 0 ) { // if path return file with path 
+          path = moduleName;
+        }else{ // else create new path from name
+          const blockName = moduleName.toLowerCase();
+          path = path + blockName + "/" + blockName + ".html";
+          if (!existsSync(path)) {
+            path = "./src/components/" +  blockName + "/" + blockName + ".jssx";
+          }
+        }
+        
+        if (!existsSync(path)) {
+          console.warn("Filed load file " + moduleName);
+
+          return this.html;
+        }else{
+          moduleHTML = readFileSync(path,{encoding:'utf8', flag:'r'});
+        }
+
+        moduleHTML = this.checkLoops(moduleHTML);
+        moduleHTML = this.checkVariables(vars, moduleHTML);
+        this.html = this.html.replaceAll(matches[0], moduleHTML);
       }
     }
-    console.log(this.html);
+    
+      return this.html;
   }
-}
-
-function resolvePathImporter({resolve}) {
-  return function(rawUrl, prev, done) {
-    let url = rawUrl.replace(/^file:\/\//, '');
-
-    if (WEBPACK_ALIAS_RE.test(url)) {
-      const correctPath = url.replace(/^~/, '');
-      const error = new Error(
-        `The @import path "${url}" is using webpack specific syntax, which isn't supported by Parcel.\n\nTo @import files from node_modules, use "${correctPath}"`,
-      );
-      done(error);
-      return;
-    }
-
-    resolve(prev, url)
-      .then(resolvedPath => {
-        done({file: resolvedPath});
-      })
-      .catch(() => {
-        /*
-         We return `null` instead of an error so that Sass' resolution algorithm can continue.
-         Imports are resolved by trying, in order:
-           * Loading a file relative to the file in which the `@import` appeared.
-           * Each custom importer.
-           * Loading a file relative to the current working directory.
-           * Each load path in `includePaths`
-           * Each load path specified in the `SASS_PATH` environment variable, which should be semicolon-separated on Windows and colon-separated elsewhere.
-         See: https://sass-lang.com/documentation/js-api#importer
-        */
-        done(null);
-      });
-  };
 }
